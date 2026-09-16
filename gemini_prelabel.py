@@ -29,7 +29,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from pascal_voc_io import PascalVocWriter  # noqa: E402
 
 IMAGE_EXTS = (".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff", ".webp")
-DEFAULT_MODEL = "gemini-2.5-flash"
+DEFAULT_MODEL = "gemini-3.8-flash"
 
 
 def build_prompt(classes=None):
@@ -133,7 +133,12 @@ def detect(client, model, image_path, prompt, retries=3):
     with open(image_path, "rb") as f:
         img_bytes = f.read()
     ext = os.path.splitext(image_path)[1].lower().lstrip(".")
-    mime = "image/jpeg" if ext in ("jpg", "jpeg") else "image/" + ext
+    if ext in ("jpg", "jpeg"):
+        mime = "image/jpeg"
+    elif ext in ("tif", "tiff"):
+        mime = "image/tiff"
+    else:
+        mime = "image/" + ext
 
     resp = None
     last_err = None
