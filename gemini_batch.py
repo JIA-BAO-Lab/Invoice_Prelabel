@@ -39,7 +39,11 @@ HANDLE = "batch_job.json"
 
 def _mime(path):
     ext = os.path.splitext(path)[1].lower().lstrip(".")
-    return "image/jpeg" if ext in ("jpg", "jpeg") else "image/" + ext
+    if ext in ("jpg", "jpeg"):
+        return "image/jpeg"
+    if ext in ("tif", "tiff"):
+        return "image/tiff"
+    return "image/" + ext
 
 
 def _api_key():
@@ -171,6 +175,9 @@ def cmd_fetch(args):
         if not inl:
             print("  ⚠ 工作 %s 沒有回應（狀態 %s）" % (j["job_name"], job.state))
             continue
+        if len(inl) != j["count"]:
+            print("  ⚠ 工作 %s 回應數(%d) 與送出張數(%d) 不符，該塊可能需重送（依序對應可能錯位）"
+                  % (j["job_name"], len(inl), j["count"]))
         for k, ir in enumerate(inl):
             idx = j["start"] + k
             if 0 <= idx < len(images):
@@ -261,7 +268,7 @@ def main():
     s.add_argument("target", help="圖片檔或含圖片的資料夾")
     s.add_argument("--model", default=DEFAULT_MODEL, help="Gemini 模型 (預設 %s)" % DEFAULT_MODEL)
     s.add_argument("--outdir", metavar="DIR", help="自訂批次資料夾（預設自動建時間戳子夾）")
-    s.add_argument("--chunk-size", type=int, default=200, help="每個批次工作最多幾張（預設 200）")
+    s.add_argument("--chunk-size", type=int, default=30, help="每個批次工作最多幾張（預設 30；避免 inlined 請求過大）")
     s.set_defaults(func=cmd_submit)
 
     f = sub.add_parser("fetch", help="取回批次結果")
