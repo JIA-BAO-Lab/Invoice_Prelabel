@@ -69,6 +69,10 @@ source ~/.gemini_env
 - 送出時在圖片資料夾建 `gemini_batch_<時間戳>/`，內含 `batch_job.json`（工作代號、圖片順序與尺寸）與 `prompt.txt`。
 - 取回完成後，同資料夾產生 XML、`run.log`、`report.txt`、`stats.json`（有正解一樣自動比對準確率並記入 `gemini_runs_log.tsv`）。
 - `--chunk-size N`：每個批次工作最多幾張（預設 200），大量時自動分成多個工作。
+- **自動取回（可選）**：`fetch --wait` 會開著每隔一段時間自動查、完成才取回；`--interval 30` 設幾分鐘查一次（預設 30）。此模式**需保持終端開啟**；關掉或關機也沒關係——之後再手動 `fetch` 一次即可（批次在 Google 端照跑，不受影響）。預設是**手動**（不加 `--wait`）。
+  ```bash
+  ./.venv/bin/python gemini_batch.py fetch "<批次資料夾>" --wait --interval 30
+  ```
 - **何時用**：趕時間/邊看邊修 → 即時 `gemini_prelabel.py`；量大、不趕、想省一半 → 批次。
 
 ### 2) 單獨評分（比對預標 vs 正解）

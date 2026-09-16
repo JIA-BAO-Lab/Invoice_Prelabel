@@ -140,23 +140,28 @@ def cmd_fetch(args):
     images = handle["images"]
 
     client = genai.Client(api_key=_api_key())
-
-    # 先看所有子工作狀態
     jobs = handle["jobs"]
-    states = []
-    for j in jobs:
-        job = client.batches.get(name=j["job_name"])
-        states.append((j, job))
-    kinds = [_state_kind(job.state) for _, job in states]
-    ok_n = kinds.count("ok")
-    print("批次工作：共 %d 個，完成 %d，處理中 %d，失敗 %d" %
-          (len(jobs), ok_n, kinds.count("pending"), kinds.count("bad")))
-    for (j, job) in states:
-        print("  - %s：%s" % (j["job_name"], job.state))
 
-    if "pending" in kinds:
-        print("\n⏳ 還有工作在處理中，尚未全部完成。稍後再執行同一行 fetch 即可。")
-        return
+    # 查所有子工作狀態；--wait 開啟時，未完成就每隔 interval 分鐘自動再查
+    while True:
+        states = [(j, client.batches.get(name=j["job_name"])) for j in jobs]
+        kinds = [_state_kind(job.state) for _, job in states]
+        print("批次工作：共 %d 個，完成 %d，處理中 %d，失敗 %d" %
+              (len(jobs), kinds.count("ok"), kinds.count("pending"), kinds.count("bad")))
+        for (j, job) in states:
+            print("  - %s：%s" % (j["job_name"], job.state))
+        if "pending" not in kinds:
+            break
+        if not args.wait:
+            print("\n⏳ 還有工作在處理中，尚未全部完成。稍後再執行同一行 fetch 即可。")
+            return
+        print("\n⏳ 尚未完成，%d 分鐘後自動再查…（Ctrl+C 可中止；直接關掉也沒關係，"
+              "之後再手動 fetch 即可）\n" % args.interval)
+        try:
+            time.sleep(args.interval * 60)
+        except KeyboardInterrupt:
+            print("\n已中止自動輪詢。之後再手動執行 fetch 取回即可。")
+            return
 
     # 全部結束（可能含失敗工作）→ 收集回應，依 handle 的順序對回每張圖
     responses = [None] * len(images)
@@ -261,6 +266,10 @@ def main():
 
     f = sub.add_parser("fetch", help="取回批次結果")
     f.add_argument("batch_dir", help="submit 產生的批次資料夾（含 batch_job.json）")
+    f.add_argument("--wait", action="store_true",
+                   help="開著自動輪詢，每隔一段時間查一次、完成才取回（需保持終端開啟）")
+    f.add_argument("--interval", type=int, default=30,
+                   help="--wait 時每隔幾分鐘查一次（預設 30）")
     f.set_defaults(func=cmd_fetch)
 
     args = ap.parse_args()
