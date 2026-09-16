@@ -1,0 +1,17 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# 金鑰檔（金鑰只放在 ~/.gemini_env，不進 repo）
+.gemini_env
+*.key
+
+# macOS
+.DS_Store
+
+# 執行輸出（預標結果都產在圖片資料夾，不應進 repo）
+gemini_*/
+*.xml
+!invoice_prompt.txt
