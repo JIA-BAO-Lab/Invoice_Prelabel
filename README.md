@@ -54,6 +54,23 @@ source ~/.gemini_env
 ./.venv/bin/python gemini_prelabel.py <圖片資料夾> --model gemini-3.8-flash --workers 8
 ```
 
+### 1b) 批次模式（非同步、半價，適合大量過夜）— `gemini_batch.py`
+
+走 Gemini Batch API：價格約即時模式的**一半**，但**非即時**（送出後排隊，數分鐘到 24 小時完成）。**兩段式**，送出後可關終端機、隔天再取回。與即時模式並存、輸出格式完全一致。
+
+```bash
+# 1) 送出（馬上結束，會給你一個「批次資料夾」）
+./.venv/bin/python gemini_batch.py submit "<圖片資料夾>" --model gemini-3.8-flash
+
+# 2) 稍後取回（可關終端機、隔天再來；沒好會叫你等，跑同一行即可）
+./.venv/bin/python gemini_batch.py fetch "<批次資料夾>"
+```
+
+- 送出時在圖片資料夾建 `gemini_batch_<時間戳>/`，內含 `batch_job.json`（工作代號、圖片順序與尺寸）與 `prompt.txt`。
+- 取回完成後，同資料夾產生 XML、`run.log`、`report.txt`、`stats.json`（有正解一樣自動比對準確率並記入 `gemini_runs_log.tsv`）。
+- `--chunk-size N`：每個批次工作最多幾張（預設 200），大量時自動分成多個工作。
+- **何時用**：趕時間/邊看邊修 → 即時 `gemini_prelabel.py`；量大、不趕、想省一半 → 批次。
+
 ### 2) 單獨評分（比對預標 vs 正解）
 
 ```bash
